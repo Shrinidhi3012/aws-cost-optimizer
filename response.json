@@ -1,1 +1,1 @@
-{"statusCode": 200, "body": "{\"total_instances\": 1, \"idle_instances\": 1, \"idle_details\": [{\"InstanceId\": \"i-0066fdbbeeab979b3\", \"InstanceType\": \"t3.micro\", \"State\": \"running\", \"LaunchTime\": \"2025-10-13T23:43:43+00:00\", \"Name\": \"test-idle-instance\", \"AvgCPU\": 0.1285694750942642}]}"}
+{"statusCode": 200, "body": "{\"scan_date\": \"2025-10-14\", \"scan_timestamp\": \"2025-10-14T15:41:05.538718\", \"total_instances\": 1, \"idle_instances\": 0, \"stored_in_dynamodb\": 1, \"idle_details\": []}"}

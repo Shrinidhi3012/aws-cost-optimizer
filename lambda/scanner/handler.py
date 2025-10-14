@@ -2,17 +2,24 @@ import boto3
 import json
 from datetime import datetime, timedelta
 from typing import List, Dict
+from decimal import Decimal
 
 # Initialize AWS clients
 ec2_client = boto3.client('ec2')
 cloudwatch_client = boto3.client('cloudwatch')
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table('CostOptimizerScans')
 
 def lambda_handler(event, context):
     """
     Main Lambda handler function.
-    Scans EC2 instances and identifies idle ones based on CPU usage.
+    Scans EC2 instances, identifies idle ones, and stores results in DynamoDB.
     """
     print("Starting EC2 idle instance scan...")
+    
+    # Get current date for partition key
+    scan_date = datetime.utcnow().strftime('%Y-%m-%d')
+    scan_timestamp = datetime.utcnow().isoformat()
     
     try:
         # Get all EC2 instances
@@ -21,16 +28,45 @@ def lambda_handler(event, context):
         
         # Analyze each instance
         idle_instances = []
+        all_scan_results = []
+        
         for instance in instances:
-            if is_instance_idle(instance):
+            is_idle = is_instance_idle(instance)
+            
+            # Prepare item for DynamoDB
+            scan_item = {
+                'scan_date': scan_date,
+                'instance_id': instance['InstanceId'],
+                'scan_timestamp': scan_timestamp,
+                'instance_type': instance['InstanceType'],
+                'instance_state': instance['State'],
+                'launch_time': instance['LaunchTime'],
+                'avg_cpu': Decimal(str(instance.get('AvgCPU', 0.0))),
+                'is_idle': is_idle,
+                'instance_name': instance.get('Name', 'N/A')
+            }
+            
+            # Store in DynamoDB
+            try:
+                table.put_item(Item=scan_item)
+                print(f"✅ Stored scan result for {instance['InstanceId']} in DynamoDB")
+            except Exception as e:
+                print(f"❌ Failed to store {instance['InstanceId']} in DynamoDB: {str(e)}")
+            
+            all_scan_results.append(scan_item)
+            
+            if is_idle:
                 idle_instances.append(instance)
         
         # Log results
         print(f"\n{'='*50}")
         print(f"SCAN COMPLETE")
         print(f"{'='*50}")
+        print(f"Scan Date: {scan_date}")
+        print(f"Scan Timestamp: {scan_timestamp}")
         print(f"Total instances scanned: {len(instances)}")
         print(f"Idle instances found: {len(idle_instances)}")
+        print(f"Results stored in DynamoDB: {len(all_scan_results)}")
         
         if idle_instances:
             print(f"\n⚠️  IDLE INSTANCES DETECTED:")
@@ -48,10 +84,13 @@ def lambda_handler(event, context):
         return {
             'statusCode': 200,
             'body': json.dumps({
+                'scan_date': scan_date,
+                'scan_timestamp': scan_timestamp,
                 'total_instances': len(instances),
                 'idle_instances': len(idle_instances),
+                'stored_in_dynamodb': len(all_scan_results),
                 'idle_details': idle_instances
-            })
+            }, default=str)
         }
         
     except Exception as e:
@@ -107,6 +146,7 @@ def is_instance_idle(instance: Dict) -> bool:
     """
     # Only check running instances
     if instance['State'] != 'running':
+        instance['AvgCPU'] = 0.0
         return False
     
     try:
