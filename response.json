@@ -1,1 +1,1 @@
-{"statusCode": 200, "body": "{\"scan_date\": \"2025-10-14\", \"scan_timestamp\": \"2025-10-14T15:41:05.538718\", \"total_instances\": 1, \"idle_instances\": 0, \"stored_in_dynamodb\": 1, \"idle_details\": []}"}
+{"statusCode": 200, "body": "{\"scan_date\": \"2025-10-14\", \"scan_timestamp\": \"2025-10-14T17:11:02.872472\", \"scan_hour\": \"17:11\", \"total_instances\": 2, \"idle_instances\": 0, \"stored_in_dynamodb\": 2, \"idle_details\": []}"}

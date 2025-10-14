@@ -14,12 +14,17 @@ def lambda_handler(event, context):
     """
     Main Lambda handler function.
     Scans EC2 instances, identifies idle ones, and stores results in DynamoDB.
+    Runs every 6 hours to capture intraday patterns.
     """
     print("Starting EC2 idle instance scan...")
     
-    # Get current date for partition key
+    # Get current date and timestamp
     scan_date = datetime.utcnow().strftime('%Y-%m-%d')
     scan_timestamp = datetime.utcnow().isoformat()
+    scan_hour = datetime.utcnow().strftime('%H:%M')
+    
+    print(f"Scan Date: {scan_date}")
+    print(f"Scan Time: {scan_hour} UTC")
     
     try:
         # Get all EC2 instances
@@ -33,11 +38,16 @@ def lambda_handler(event, context):
         for instance in instances:
             is_idle = is_instance_idle(instance)
             
+            # Create composite sort key: instance_id#timestamp
+            scan_id = f"{instance['InstanceId']}#{scan_timestamp}"
+            
             # Prepare item for DynamoDB
             scan_item = {
                 'scan_date': scan_date,
-                'instance_id': instance['InstanceId'],
+                'scan_id': scan_id,  # Composite key
                 'scan_timestamp': scan_timestamp,
+                'scan_hour': scan_hour,
+                'instance_id': instance['InstanceId'],
                 'instance_type': instance['InstanceType'],
                 'instance_state': instance['State'],
                 'launch_time': instance['LaunchTime'],
@@ -49,7 +59,7 @@ def lambda_handler(event, context):
             # Store in DynamoDB
             try:
                 table.put_item(Item=scan_item)
-                print(f"✅ Stored scan result for {instance['InstanceId']} in DynamoDB")
+                print(f"✅ Stored scan result for {instance['InstanceId']} at {scan_hour}")
             except Exception as e:
                 print(f"❌ Failed to store {instance['InstanceId']} in DynamoDB: {str(e)}")
             
@@ -63,7 +73,7 @@ def lambda_handler(event, context):
         print(f"SCAN COMPLETE")
         print(f"{'='*50}")
         print(f"Scan Date: {scan_date}")
-        print(f"Scan Timestamp: {scan_timestamp}")
+        print(f"Scan Time: {scan_hour} UTC")
         print(f"Total instances scanned: {len(instances)}")
         print(f"Idle instances found: {len(idle_instances)}")
         print(f"Results stored in DynamoDB: {len(all_scan_results)}")
@@ -86,6 +96,7 @@ def lambda_handler(event, context):
             'body': json.dumps({
                 'scan_date': scan_date,
                 'scan_timestamp': scan_timestamp,
+                'scan_hour': scan_hour,
                 'total_instances': len(instances),
                 'idle_instances': len(idle_instances),
                 'stored_in_dynamodb': len(all_scan_results),
