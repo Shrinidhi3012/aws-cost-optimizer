@@ -28,3 +28,44 @@ Prerequisites:
 - AWS CLI configured
 - Python 3.13+
 - Docker Desktop
+## 🐳 Docker Deployment
+
+### Pull from DockerHub
+```bash
+docker pull shrinidhi3012/aws-cost-optimizer-dashboard:latest
+```
+
+### Run with Docker
+```bash
+docker run -p 8501:8501 \
+  -v ~/.aws:/root/.aws:ro \
+  shrinidhi3012/aws-cost-optimizer-dashboard:latest
+```
+
+Then open: http://localhost:8501
+
+### Run with Docker Compose
+```bash
+docker-compose up -d
+
+# View logs
+docker-compose logs -f dashboard
+
+# Stop
+docker-compose down
+```
+
+### Build Locally
+```bash
+cd dashboard
+docker build -t aws-cost-optimizer-dashboard .
+```
+
+---
+
+## 📊 Dashboard Features
+- Real-time AWS resource monitoring
+- Cost optimization insights
+- Interactive charts and graphs
+- Idle instance detection
+- Historical trend analysis

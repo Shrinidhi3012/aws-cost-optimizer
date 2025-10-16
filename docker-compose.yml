@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    image: shrinidhi3012/aws-cost-optimizer-dashboard:latest
+    ports:
+      - "8501:8501"
+    volumes:
+      - ~/.aws:/root/.aws:ro
+    restart: unless-stopped
+    container_name: aws-cost-optimizer-dashboard
