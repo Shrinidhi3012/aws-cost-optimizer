@@ -1,0 +1,9 @@
+# Local development dependencies
+boto3>=1.34.0
+streamlit>=1.29.0
+pandas>=2.1.0
+plotly>=5.18.0
+requests>=2.31.0
+
+# AWS CLI tools (optional, usually installed globally)
+# awscli>=2.0.0
