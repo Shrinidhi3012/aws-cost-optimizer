@@ -25,7 +25,7 @@ def get_dynamodb():
 dynamodb = get_dynamodb()
 scans_table = dynamodb.Table('CostOptimizerScans')
 costs_table = dynamodb.Table('CostAnalysisHistory')
-
+advanced_scans_table = dynamodb.Table('AdvancedResourceScans')
 # Helper function to convert Decimal to float
 def decimal_to_float(obj):
     if isinstance(obj, Decimal):
@@ -131,6 +131,31 @@ def get_cost_data():
     try:
         response = costs_table.scan()
         return response['Items']
+    except:
+        return []
+
+# Fetch advanced scan data
+@st.cache_data(ttl=300)
+def get_advanced_scan_data(days_back):
+    try:
+        end_date = datetime.utcnow().date()
+        start_date = end_date - timedelta(days=days_back)
+        
+        all_findings = []
+        current_date = start_date
+        
+        while current_date <= end_date:
+            try:
+                response = advanced_scans_table.query(
+                    KeyConditionExpression='scan_date = :date',
+                    ExpressionAttributeValues={':date': str(current_date)}
+                )
+                all_findings.extend(response['Items'])
+            except:
+                pass
+            current_date += timedelta(days=1)
+        
+        return all_findings
     except:
         return []
 
@@ -357,6 +382,102 @@ if not df_scans.empty:
 else:
     st.info("No scan data available. Your scanner will collect data every 6 hours automatically.")
 
+# Advanced Resource Findings
+st.markdown("---")
+st.subheader("🔍 Advanced Resource Findings")
+
+with st.spinner("Loading advanced scan data..."):
+    advanced_findings = get_advanced_scan_data(days_back)
+
+if advanced_findings:
+    # Convert to DataFrame
+    df_advanced = pd.DataFrame(advanced_findings)
+    
+    # Summary metrics
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        total_findings = len(df_advanced)
+        st.metric("Total Findings", total_findings)
+    
+    with col2:
+        resource_types = df_advanced['resource_type'].nunique()
+        st.metric("Resource Types", resource_types)
+    
+    with col3:
+        if 'estimated_monthly_cost' in df_advanced.columns:
+            df_advanced['estimated_monthly_cost'] = df_advanced['estimated_monthly_cost'].apply(decimal_to_float)
+            total_potential_savings = df_advanced['estimated_monthly_cost'].sum()
+            st.metric("Potential Monthly Savings", f"${total_potential_savings:.2f}")
+        else:
+            st.metric("Potential Monthly Savings", "$0.00")
+    
+    with col4:
+        high_severity = len(df_advanced[df_advanced.get('severity', '') == 'high']) if 'severity' in df_advanced.columns else 0
+        st.metric("High Severity Issues", high_severity, delta="Critical" if high_severity > 0 else "Good")
+    
+    # Breakdown by resource type
+    st.subheader("Findings by Resource Type")
+    
+    resource_counts = df_advanced['resource_type'].value_counts()
+    
+    col_left, col_right = st.columns(2)
+    
+    with col_left:
+        fig = px.pie(
+            values=resource_counts.values,
+            names=resource_counts.index,
+            title='Distribution of Findings by Resource Type'
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    
+    with col_right:
+        fig = px.bar(
+            x=resource_counts.index,
+            y=resource_counts.values,
+            title='Count by Resource Type',
+            labels={'x': 'Resource Type', 'y': 'Count'}
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    
+    # Detailed findings table
+    st.subheader("Detailed Findings")
+    
+    # Filter by resource type
+    selected_resource_type = st.selectbox(
+        "Filter by Resource Type",
+        ["All"] + list(df_advanced['resource_type'].unique())
+    )
+    
+    filtered_advanced = df_advanced.copy()
+    if selected_resource_type != "All":
+        filtered_advanced = filtered_advanced[filtered_advanced['resource_type'] == selected_resource_type]
+    
+    if not filtered_advanced.empty:
+        display_cols = ['resource_type', 'resource_id', 'issue', 'severity', 'estimated_monthly_cost', 'recommendation']
+        available_cols = [col for col in display_cols if col in filtered_advanced.columns]
+        
+        display_df = filtered_advanced[available_cols].copy()
+        display_df = display_df.rename(columns={
+            'resource_type': 'Type',
+            'resource_id': 'Resource ID',
+            'issue': 'Issue',
+            'severity': 'Severity',
+            'estimated_monthly_cost': 'Monthly Cost ($)',
+            'recommendation': 'Recommendation'
+        })
+        
+        st.dataframe(
+            display_df,
+            use_container_width=True,
+            hide_index=True
+        )
+    else:
+        st.info("No findings match the selected filter.")
+        
+else:
+    st.info("No advanced scan data available yet. The advanced scanner runs daily at 1 AM UTC.")
+    
 # Footer
 st.markdown("---")
 st.markdown("### 🔄 Auto-refresh: Data updates every 5 minutes")
