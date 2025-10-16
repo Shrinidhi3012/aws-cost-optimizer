@@ -5,6 +5,10 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 from decimal import Decimal
+import subprocess
+import json
+import os
+import requests
 
 # Page config
 st.set_page_config(
@@ -27,6 +31,57 @@ def decimal_to_float(obj):
     if isinstance(obj, Decimal):
         return float(obj)
     raise TypeError
+
+# AI Query Function
+def query_ollama(question, data_context):
+    """Query Ollama with dashboard data context - works in Docker and locally"""
+    try:
+        prompt = f"""You are an AWS cost optimization assistant. Answer this question based on the data:
+
+Data Context:
+{data_context}
+
+User Question: {question}
+
+Provide a concise, actionable answer in 2-3 sentences."""
+        
+        # Check if running in Docker
+        if os.path.exists('/.dockerenv'):
+            # Running in Docker - use Ollama HTTP API
+            try:
+                response = requests.post(
+                    'http://host.docker.internal:11434/api/generate',
+                    json={
+                        "model": "mistral",
+                        "prompt": prompt,
+                        "stream": False
+                    },
+                    timeout=60
+                )
+                
+                if response.status_code == 200:
+                    return response.json().get('response', 'No response from AI')
+                else:
+                    return f"❌ Ollama API error: {response.status_code}. Make sure Ollama is running on host with 'ollama serve'"
+                    
+            except requests.exceptions.ConnectionError:
+                return "❌ Cannot connect to Ollama. Make sure it's running on your host machine with 'ollama serve'"
+            except Exception as e:
+                return f"❌ Error connecting to Ollama: {str(e)}"
+        else:
+            # Running locally - use CLI
+            result = subprocess.run(
+                ['ollama', 'run', 'mistral', prompt],
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            return result.stdout.strip()
+            
+    except subprocess.TimeoutExpired:
+        return "⏱️ Response timed out. Please try a simpler question."
+    except Exception as e:
+        return f"❌ Error: {str(e)}"
 
 # Title
 st.title("💰 AWS Cost Optimizer Dashboard")
@@ -120,7 +175,8 @@ with col2:
 with col3:
     if not df_scans.empty:
         idle_count = df_scans['is_idle'].sum()
-        st.metric("Idle Instances Found", idle_count, delta=f"{(idle_count/len(df_scans)*100):.1f}%")
+        idle_pct = (idle_count/len(df_scans)*100)
+        st.metric("Idle Instances Found", idle_count, delta=f"{idle_pct:.1f}%")
     else:
         st.metric("Idle Instances Found", 0)
 
@@ -130,6 +186,57 @@ with col4:
         st.metric("Potential Savings", f"${total_savings:.2f}")
     else:
         st.metric("Potential Savings", "$0.00")
+
+st.markdown("---")
+
+# AI Assistant Section
+st.subheader("🤖 AI Cost Assistant")
+
+# Detect environment
+if os.path.exists('/.dockerenv'):
+    st.caption("🐳 Running in Docker - connecting to Ollama on host machine")
+else:
+    st.caption("💻 Running locally")
+
+# Create data context for AI
+if not df_scans.empty:
+    savings_amount = df_costs['potential_savings'].sum() if not df_costs.empty else 0
+    data_context = f"""
+Total Scans: {len(df_scans)}
+Unique Instances: {df_scans['instance_id'].nunique()}
+Idle Rate: {(df_scans['is_idle'].sum()/len(df_scans)*100):.1f}%
+Potential Savings: ${savings_amount:.2f}
+Average CPU: {df_scans['avg_cpu'].mean():.2f}%
+"""
+else:
+    data_context = "No scan data available yet."
+
+# AI Chat Interface
+col_ai_left, col_ai_right = st.columns([2, 1])
+
+with col_ai_left:
+    user_question = st.text_input(
+        "Ask the AI about your AWS costs:",
+        placeholder="e.g., Why is my idle rate high? What should I optimize first?"
+    )
+    
+    if st.button("🚀 Ask AI", type="primary"):
+        if user_question:
+            with st.spinner("🤖 AI is analyzing your data..."):
+                ai_response = query_ollama(user_question, data_context)
+                st.success("**AI Response:**")
+                st.write(ai_response)
+        else:
+            st.warning("Please enter a question first!")
+
+with col_ai_right:
+    st.info("""
+    **💡 Try asking:**
+    - Why are my costs high?
+    - What instances should I stop?
+    - How can I save money?
+    - What's causing the idle rate?
+    """)
 
 st.markdown("---")
 
@@ -197,7 +304,11 @@ if not df_scans.empty:
     
     # Display table
     if not filtered_df.empty:
-        # Select only the columns we want to display
+        # Sort by scan_datetime first
+        if 'scan_datetime' in filtered_df.columns:
+            filtered_df = filtered_df.sort_values('scan_datetime', ascending=False)
+        
+        # Select display columns
         display_columns = [
             'instance_id', 
             'instance_name', 
@@ -209,11 +320,6 @@ if not df_scans.empty:
             'scan_hour'
         ]
         
-        # Sort by scan_datetime first (it exists in filtered_df)
-        if 'scan_datetime' in filtered_df.columns:
-            filtered_df = filtered_df.sort_values('scan_datetime', ascending=False)
-        
-        # Now select display columns
         available_columns = [col for col in display_columns if col in filtered_df.columns]
         display_df = filtered_df[available_columns].copy()
         
@@ -255,3 +361,4 @@ else:
 st.markdown("---")
 st.markdown("### 🔄 Auto-refresh: Data updates every 5 minutes")
 st.markdown("**Next scan:** Check EventBridge schedule (every 6 hours at 00:00, 06:00, 12:00, 18:00 UTC)")
+st.markdown("**AI Assistant:** Powered by Ollama (Mistral) running locally")
