@@ -1,1 +1,0 @@
-{"statusCode": 200, "body": "{\"scan_date\": \"2025-10-16\", \"total_findings\": 1, \"potential_monthly_savings\": 0.5, \"breakdown\": {\"ebs\": 1, \"rds\": 0, \"s3\": 0, \"lambda\": 0, \"untagged\": 0}}"}

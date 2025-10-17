@@ -84,4 +84,14 @@ Organizations waste **30-40% of their AWS spend** on idle or underutilized resou
 - **Terraform:** Infrastructure provisioning
 
 ---
+
+## 👤 Author
+
+**Shrinidhi Kulkarni**
+- 🔗 LinkedIn: [linkedin.com/in/shrinidhi-kulkarni](https://linkedin.com/in/shrinidhi-kulkarni)
+- 💻 GitHub: [@Shrinidhi3012](https://github.com/Shrinidhi3012)
+- 📧 Email: shrinidhi.kulkarni@example.com
+
+---
+**Built with ❤️ for AWS cost optimization**
 **⭐ If you find this project useful, please star the repository!**
