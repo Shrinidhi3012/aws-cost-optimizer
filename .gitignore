@@ -61,3 +61,6 @@ cost-response.json
 terraform/builds/
 *.tfvars
 terraform/builds/
+
+# Test resource tracking (local only)
+test-resources.json

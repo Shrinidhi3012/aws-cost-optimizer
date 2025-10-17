@@ -1,6 +1,0 @@
-{
-  "instances": ["i-0a3b07fcffe47fd17", "i-0e9eb3933ef23d10e", "i-0f9a2580df25de502"],
-  "volumes": ["vol-0c6aa9938915f41ef", "vol-060504f683a168c08"],
-  "buckets": ["aws-cost-optimizer-demo-1760720455"],
-  "created_at": "2025-10-17T17:00:56Z"
-}
