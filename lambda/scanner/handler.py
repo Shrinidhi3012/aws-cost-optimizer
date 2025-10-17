@@ -31,20 +31,17 @@ def lambda_handler(event, context):
         instances = get_all_instances()
         print(f"Found {len(instances)} EC2 instances to analyze")
         
-        # Analyze each instance
         idle_instances = []
         all_scan_results = []
         
         for instance in instances:
             is_idle = is_instance_idle(instance)
             
-            # Create composite sort key: instance_id#timestamp
             scan_id = f"{instance['InstanceId']}#{scan_timestamp}"
             
-            # Prepare item for DynamoDB
             scan_item = {
                 'scan_date': scan_date,
-                'scan_id': scan_id,  # Composite key
+                'scan_id': scan_id,
                 'scan_timestamp': scan_timestamp,
                 'scan_hour': scan_hour,
                 'instance_id': instance['InstanceId'],
@@ -59,9 +56,9 @@ def lambda_handler(event, context):
             # Store in DynamoDB
             try:
                 table.put_item(Item=scan_item)
-                print(f"✅ Stored scan result for {instance['InstanceId']} at {scan_hour}")
+                print(f"Stored scan result for {instance['InstanceId']} at {scan_hour}")
             except Exception as e:
-                print(f"❌ Failed to store {instance['InstanceId']} in DynamoDB: {str(e)}")
+                print(f"Failed to store {instance['InstanceId']} in DynamoDB: {str(e)}")
             
             all_scan_results.append(scan_item)
             
@@ -79,7 +76,7 @@ def lambda_handler(event, context):
         print(f"Results stored in DynamoDB: {len(all_scan_results)}")
         
         if idle_instances:
-            print(f"\n⚠️  IDLE INSTANCES DETECTED:")
+            print(f"\n IDLE INSTANCES DETECTED:")
             for instance in idle_instances:
                 print(f"  - Instance ID: {instance['InstanceId']}")
                 print(f"    Name: {instance.get('Name', 'N/A')}")
@@ -88,7 +85,7 @@ def lambda_handler(event, context):
                 print(f"    State: {instance['State']}")
                 print()
         else:
-            print("✅ No idle instances found!")
+            print(" No idle instances found!")
         
         # Return results
         return {
@@ -105,7 +102,7 @@ def lambda_handler(event, context):
         }
         
     except Exception as e:
-        print(f"❌ Error during scan: {str(e)}")
+        print(f" Error during scan: {str(e)}")
         return {
             'statusCode': 500,
             'body': json.dumps({'error': str(e)})
@@ -124,7 +121,6 @@ def get_all_instances() -> List[Dict]:
         
         for reservation in response['Reservations']:
             for instance in reservation['Instances']:
-                # Extract relevant information
                 instance_info = {
                     'InstanceId': instance['InstanceId'],
                     'InstanceType': instance['InstanceType'],
@@ -132,7 +128,6 @@ def get_all_instances() -> List[Dict]:
                     'LaunchTime': instance['LaunchTime'].isoformat()
                 }
                 
-                # Get instance name from tags
                 if 'Tags' in instance:
                     for tag in instance['Tags']:
                         if tag['Key'] == 'Name':
@@ -155,13 +150,11 @@ def is_instance_idle(instance: Dict) -> bool:
     - It's in 'running' state
     - Average CPU usage over last 7 days is < 5%
     """
-    # Only check running instances
     if instance['State'] != 'running':
         instance['AvgCPU'] = 0.0
         return False
     
     try:
-        # Get CPU metrics from CloudWatch for the last 7 days
         end_time = datetime.utcnow()
         start_time = end_time - timedelta(days=7)
         
@@ -176,22 +169,19 @@ def is_instance_idle(instance: Dict) -> bool:
             ],
             StartTime=start_time,
             EndTime=end_time,
-            Period=3600,  # 1 hour intervals
+            Period=3600,
             Statistics=['Average']
         )
         
-        # Calculate average CPU usage
         if response['Datapoints']:
             datapoints = response['Datapoints']
             avg_cpu = sum(dp['Average'] for dp in datapoints) / len(datapoints)
             instance['AvgCPU'] = avg_cpu
             
-            # Consider idle if average CPU < 5%
             if avg_cpu < 5.0:
                 return True
         else:
-            # No datapoints means instance might be very new or no metrics
-            print(f"⚠️  No CPU metrics found for {instance['InstanceId']}")
+            print(f" No CPU metrics found for {instance['InstanceId']}")
             instance['AvgCPU'] = 0.0
             
     except Exception as e:

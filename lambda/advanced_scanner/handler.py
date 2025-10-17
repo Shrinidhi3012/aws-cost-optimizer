@@ -116,7 +116,7 @@ def scan_unused_ebs_volumes() -> List[Dict]:
             create_time = volume['CreateTime']
             age_days = (datetime.utcnow().replace(tzinfo=create_time.tzinfo) - create_time).days
             
-            # Estimate cost: ~$0.10/GB-month for gp3
+            # Estimate cost
             size_gb = volume['Size']
             monthly_cost = size_gb * 0.10
             
@@ -155,7 +155,7 @@ def scan_idle_rds_instances() -> List[Dict]:
             cpu_metrics = get_rds_cpu_usage(instance_id)
             
             if cpu_metrics and cpu_metrics < 10.0:  # Less than 10% CPU
-                # Rough cost estimation based on instance class
+                
                 estimated_cost = estimate_rds_cost(instance_class)
                 
                 finding = {
@@ -203,7 +203,7 @@ def get_rds_cpu_usage(instance_id: str) -> float:
 
 def estimate_rds_cost(instance_class: str) -> float:
     """Rough RDS cost estimation"""
-    # Simplified pricing (actual varies by region)
+    # Simplified pricing
     pricing = {
         'db.t3.micro': 15,
         'db.t3.small': 30,
@@ -213,7 +213,7 @@ def estimate_rds_cost(instance_class: str) -> float:
         'db.m5.xlarge': 280,
     }
     
-    return pricing.get(instance_class, 100)  # Default estimate
+    return pricing.get(instance_class, 100)
 
 
 def scan_old_s3_buckets() -> List[Dict]:
@@ -227,13 +227,12 @@ def scan_old_s3_buckets() -> List[Dict]:
             bucket_name = bucket['Name']
             
             try:
-                # Get bucket size (simplified - in production use CloudWatch metrics)
-                # For now, just flag buckets older than 1 year
+                
                 age_days = (datetime.utcnow().replace(tzinfo=bucket['CreationDate'].tzinfo) - bucket['CreationDate']).days
                 
                 if age_days > 365:
-                    # Rough estimate: $0.023/GB-month
-                    estimated_cost = 10  # Placeholder
+                    # Rough estimate
+                    estimated_cost = 10
                     
                     finding = {
                         'resource_type': 's3_bucket',
@@ -248,7 +247,6 @@ def scan_old_s3_buckets() -> List[Dict]:
                     findings.append(finding)
                     
             except Exception as e:
-                # Skip buckets we can't access
                 pass
                 
     except Exception as e:
@@ -268,14 +266,12 @@ def scan_expensive_lambda_functions() -> List[Dict]:
             function_name = function['FunctionName']
             memory_mb = function['MemorySize']
             
-            # Get invocation metrics
             invocations = get_lambda_invocations(function_name)
             
-            if invocations is not None and invocations < 100:  # Less than 100 invocations/week
-                # Estimate cost based on memory and invocations
-                estimated_cost = (memory_mb / 1024) * 0.0000166667 * invocations * 4  # Rough monthly
+            if invocations is not None and invocations < 100:
+                estimated_cost = (memory_mb / 1024) * 0.0000166667 * invocations * 4  
                 
-                if estimated_cost > 1:  # Only flag if costing more than $1/month
+                if estimated_cost > 1: 
                     finding = {
                         'resource_type': 'lambda_function',
                         'resource_id': function_name,
@@ -307,7 +303,7 @@ def get_lambda_invocations(function_name: str) -> int:
             Dimensions=[{'Name': 'FunctionName', 'Value': function_name}],
             StartTime=start_time,
             EndTime=end_time,
-            Period=604800,  # 1 week
+            Period=604800,
             Statistics=['Sum']
         )
         
@@ -341,7 +337,7 @@ def scan_untagged_resources() -> List[Dict]:
                         'resource_id': instance_id,
                         'issue': 'missing_tags',
                         'missing_tags': str(missing_tags),
-                        'estimated_monthly_cost': Decimal('0'),  # No direct cost, but compliance issue
+                        'estimated_monthly_cost': Decimal('0'),
                         'recommendation': f'Add missing tags: {", ".join(missing_tags)}',
                         'severity': 'medium'
                     }

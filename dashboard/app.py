@@ -26,7 +26,7 @@ dynamodb = get_dynamodb()
 scans_table = dynamodb.Table('CostOptimizerScans')
 costs_table = dynamodb.Table('CostAnalysisHistory')
 advanced_scans_table = dynamodb.Table('AdvancedResourceScans')
-# Helper function to convert Decimal to float
+# Decimal to float
 def decimal_to_float(obj):
     if isinstance(obj, Decimal):
         return float(obj)
@@ -45,9 +45,9 @@ User Question: {question}
 
 Provide a concise, actionable answer in 2-3 sentences."""
         
-        # Check if running in Docker
+        
         if os.path.exists('/.dockerenv'):
-            # Running in Docker - use Ollama HTTP API
+            
             try:
                 response = requests.post(
                     'http://host.docker.internal:11434/api/generate',
@@ -62,14 +62,13 @@ Provide a concise, actionable answer in 2-3 sentences."""
                 if response.status_code == 200:
                     return response.json().get('response', 'No response from AI')
                 else:
-                    return f"❌ Ollama API error: {response.status_code}. Make sure Ollama is running on host with 'ollama serve'"
+                    return f"Ollama API error: {response.status_code}. Make sure Ollama is running on host with 'ollama serve'"
                     
             except requests.exceptions.ConnectionError:
-                return "❌ Cannot connect to Ollama. Make sure it's running on your host machine with 'ollama serve'"
+                return "Cannot connect to Ollama. Make sure it's running on your host machine with 'ollama serve'"
             except Exception as e:
-                return f"❌ Error connecting to Ollama: {str(e)}"
+                return f"Error connecting to Ollama: {str(e)}"
         else:
-            # Running locally - use CLI
             result = subprocess.run(
                 ['ollama', 'run', 'mistral', prompt],
                 capture_output=True,
@@ -79,16 +78,16 @@ Provide a concise, actionable answer in 2-3 sentences."""
             return result.stdout.strip()
             
     except subprocess.TimeoutExpired:
-        return "⏱️ Response timed out. Please try a simpler question."
+        return "Response timed out. Please try a simpler question."
     except Exception as e:
-        return f"❌ Error: {str(e)}"
+        return f"Error: {str(e)}"
 
 # Title
-st.title("💰 AWS Cost Optimizer Dashboard")
+st.title("AWS Cost Optimizer Dashboard")
 st.markdown("Real-time monitoring of AWS resources and cost optimization opportunities")
 
 # Sidebar filters
-st.sidebar.header("📅 Filters")
+st.sidebar.header("Filters")
 
 # Date range selector
 date_range = st.sidebar.selectbox(
@@ -104,7 +103,7 @@ else:
     days_back = 365
 
 # Fetch scan data
-@st.cache_data(ttl=300)  # Cache for 5 minutes
+@st.cache_data(ttl=300)
 def get_scan_data(days_back):
     end_date = datetime.utcnow().date()
     start_date = end_date - timedelta(days=days_back)
@@ -215,13 +214,13 @@ with col4:
 st.markdown("---")
 
 # AI Assistant Section
-st.subheader("🤖 AI Cost Assistant")
+st.subheader("AI Cost Assistant")
 
 # Detect environment
 if os.path.exists('/.dockerenv'):
-    st.caption("🐳 Running in Docker - connecting to Ollama on host machine")
+    st.caption("Running in Docker - connecting to Ollama on host machine")
 else:
-    st.caption("💻 Running locally")
+    st.caption("Running locally")
 
 # Create data context for AI
 if not df_scans.empty:
@@ -245,9 +244,9 @@ with col_ai_left:
         placeholder="e.g., Why is my idle rate high? What should I optimize first?"
     )
     
-    if st.button("🚀 Ask AI", type="primary"):
+    if st.button("Ask AI", type="primary"):
         if user_question:
-            with st.spinner("🤖 AI is analyzing your data..."):
+            with st.spinner("AI is analyzing your data..."):
                 ai_response = query_ollama(user_question, data_context)
                 st.success("**AI Response:**")
                 st.write(ai_response)
@@ -256,7 +255,7 @@ with col_ai_left:
 
 with col_ai_right:
     st.info("""
-    **💡 Try asking:**
+    ** Try asking:**
     - Why are my costs high?
     - What instances should I stop?
     - How can I save money?
@@ -269,7 +268,7 @@ st.markdown("---")
 col_left, col_right = st.columns(2)
 
 with col_left:
-    st.subheader("📊 Scan Activity Over Time")
+    st.subheader("Scan Activity Over Time")
     if not df_scans.empty:
         # Group by date and count scans
         scans_per_day = df_scans.groupby('scan_date').size().reset_index(name='scan_count')
@@ -287,7 +286,7 @@ with col_left:
         st.info("No scan data available yet. Wait for automated scans to run.")
 
 with col_right:
-    st.subheader("💰 Cost Trend")
+    st.subheader("Cost Trend")
     if not df_costs.empty:
         fig = px.line(
             df_costs,
@@ -303,7 +302,7 @@ with col_right:
 
 # Instance details
 st.markdown("---")
-st.subheader("🖥️ Instance Details")
+st.subheader("Instance Details")
 
 if not df_scans.empty:
     # Filter controls
@@ -368,7 +367,7 @@ if not df_scans.empty:
         st.info("No instances match the selected filters.")
     
     # CPU Distribution
-    st.subheader("📈 CPU Utilization Distribution")
+    st.subheader("CPU Utilization Distribution")
     fig = px.histogram(
         df_scans,
         x='avg_cpu',
@@ -384,7 +383,7 @@ else:
 
 # Advanced Resource Findings
 st.markdown("---")
-st.subheader("🔍 Advanced Resource Findings")
+st.subheader("Advanced Resource Findings")
 
 with st.spinner("Loading advanced scan data..."):
     advanced_findings = get_advanced_scan_data(days_back)
@@ -480,6 +479,6 @@ else:
     
 # Footer
 st.markdown("---")
-st.markdown("### 🔄 Auto-refresh: Data updates every 5 minutes")
+st.markdown("### Auto-refresh: Data updates every 5 minutes")
 st.markdown("**Next scan:** Check EventBridge schedule (every 6 hours at 00:00, 06:00, 12:00, 18:00 UTC)")
 st.markdown("**AI Assistant:** Powered by Ollama (Mistral) running locally")

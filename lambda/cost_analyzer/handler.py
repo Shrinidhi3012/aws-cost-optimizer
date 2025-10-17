@@ -17,7 +17,6 @@ def lambda_handler(event, context):
     print("Starting cost analysis...")
     
     try:
-        # Get costs for last 7 days
         end_date = datetime.utcnow().date()
         start_date = end_date - timedelta(days=7)
         
@@ -26,13 +25,11 @@ def lambda_handler(event, context):
         # Fetch cost data
         cost_data = get_cost_by_service(start_date, end_date)
         
-        # Get EC2 costs specifically
+        # Get EC2 costs
         ec2_costs = cost_data.get('Amazon Elastic Compute Cloud - Compute', 0.0)
         
-        # Calculate potential savings from idle instances
         idle_savings = calculate_idle_instance_savings(start_date, end_date)
         
-        # Calculate total costs
         total_cost = sum(cost_data.values())
         
         # Log results
@@ -63,9 +60,9 @@ def lambda_handler(event, context):
         
         try:
             costs_table.put_item(Item=analysis_record)
-            print(f"✅ Stored cost analysis in DynamoDB")
+            print(f"Stored cost analysis in DynamoDB")
         except Exception as e:
-            print(f"⚠️  Failed to store in DynamoDB: {str(e)}")
+            print(f"Failed to store in DynamoDB: {str(e)}")
         
         return {
             'statusCode': 200,
@@ -83,7 +80,7 @@ def lambda_handler(event, context):
         }
         
     except Exception as e:
-        print(f"❌ Error during cost analysis: {str(e)}")
+        print(f"Error during cost analysis: {str(e)}")
         import traceback
         traceback.print_exc()
         return {
@@ -139,7 +136,6 @@ def calculate_idle_instance_savings(start_date, end_date) -> float:
     try:
         total_idle_hours = 0
         
-        # Query all scans between start and end date
         current_date = start_date
         while current_date < end_date:
             scan_date_str = str(current_date)
@@ -149,16 +145,13 @@ def calculate_idle_instance_savings(start_date, end_date) -> float:
                 ExpressionAttributeValues={':date': scan_date_str}
             )
             
-            # Count idle instances (each scan represents ~6 hours)
+            # Count idle instances
             idle_count = sum(1 for item in response['Items'] if item.get('is_idle', False))
             
-            # Each idle instance detected = 6 hours of waste (between scans)
             total_idle_hours += (idle_count * 6)
             
             current_date += timedelta(days=1)
         
-        # Estimate cost: t3.micro costs ~$0.0104/hour
-        # This is a rough estimate - actual costs vary by region and instance type
         estimated_savings = total_idle_hours * 0.0104
         
         print(f"  Detected {total_idle_hours} idle instance-hours")

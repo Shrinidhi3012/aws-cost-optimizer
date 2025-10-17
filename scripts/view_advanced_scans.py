@@ -12,7 +12,6 @@ table = dynamodb.Table('AdvancedResourceScans')
 
 def view_advanced_scans():
     """View advanced scan findings"""
-    # Get scans from last 7 days
     end_date = datetime.utcnow().date()
     start_date = end_date - timedelta(days=7)
     
@@ -60,7 +59,7 @@ def view_advanced_scans():
     
     # Display findings by type
     for resource_type, findings in sorted(by_type.items()):
-        print(f"\n📊 {resource_type.upper().replace('_', ' ')}")
+        print(f"\n {resource_type.upper().replace('_', ' ')}")
         print(f"{'-'*70}")
         
         for finding in findings:
@@ -70,7 +69,6 @@ def view_advanced_scans():
             print(f"  Severity: {finding.get('severity', 'unknown')}")
             print(f"  Recommendation: {finding.get('recommendation', 'N/A')}")
             
-            # Type-specific details
             if resource_type == 'ebs_volume':
                 print(f"  Size: {finding.get('size_gb', 'N/A')} GB")
                 print(f"  Type: {finding.get('volume_type', 'N/A')}")

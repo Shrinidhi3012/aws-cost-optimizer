@@ -25,13 +25,11 @@ def display_scans(items):
         print("No scans found for this date.")
         return
     
-    # Group by scan time
     scans_by_time = defaultdict(list)
     for item in items:
         scan_hour = item.get('scan_hour', 'unknown')
         scans_by_time[scan_hour].append(item)
     
-    # Get unique instances across all scans
     unique_instances = set(item['instance_id'] for item in items)
     
     print(f"\n{'='*70}")
@@ -39,23 +37,21 @@ def display_scans(items):
     print(f"Scans performed at {len(scans_by_time)} different time(s)")
     print(f"{'='*70}\n")
     
-    # Display by scan time
     for scan_time in sorted(scans_by_time.keys()):
         scan_items = scans_by_time[scan_time]
         unique_in_scan = set(item['instance_id'] for item in scan_items)
         
-        print(f"🕐 Scan Time: {scan_time} UTC")
+        print(f" Scan Time: {scan_time} UTC")
         print(f"   Unique instances in this scan: {len(unique_in_scan)}")
         print(f"   Total scan records: {len(scan_items)}")
         
-        # Group by instance to show multiple scans of same instance
         instances = defaultdict(list)
         for item in scan_items:
             instances[item['instance_id']].append(item)
         
         for instance_id, records in instances.items():
             if len(records) > 1:
-                print(f"\n   ⚠️  Instance scanned {len(records)} times at this hour:")
+                print(f"\n   Instance scanned {len(records)} times at this hour:")
             else:
                 print(f"\n   Instance:")
             
@@ -67,7 +63,7 @@ def display_scans(items):
             print(f"     Type: {latest_record['instance_type']}")
             print(f"     State: {latest_record['instance_state']}")
             print(f"     Avg CPU: {float(latest_record['avg_cpu']):.4f}%")
-            print(f"     Is Idle: {'⚠️  YES' if latest_record['is_idle'] else '✅ NO'}")
+            print(f"     Is Idle: {'  YES' if latest_record['is_idle'] else ' NO'}")
             
             if len(records) > 1:
                 print(f"     Scan timestamps:")
@@ -106,7 +102,6 @@ def get_idle_summary(items):
     print(f"{'='*70}\n")
 
 if __name__ == '__main__':
-    # Get today's date
     today = datetime.utcnow().strftime('%Y-%m-%d')
     
     print(f"Querying scans for: {today}")

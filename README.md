@@ -6,9 +6,7 @@
 [![Python](https://img.shields.io/badge/Python-3.13-blue)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/Docker-Enabled-blue)](https://www.docker.com/)
 [![Terraform](https://img.shields.io/badge/Terraform-IaC-purple)](https://www.terraform.io/)
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-![AWS Cost Optimizer Dashboard](docs/images/dashboard-preview.png)
 
 ---
 

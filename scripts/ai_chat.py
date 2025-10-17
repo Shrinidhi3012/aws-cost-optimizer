@@ -11,7 +11,7 @@ dynamodb = boto3.resource('dynamodb')
 scans_table = dynamodb.Table('CostOptimizerScans')
 costs_table = dynamodb.Table('CostAnalysisHistory')
 
-# Store context for conversation
+
 conversation_context = []
 
 def get_data_summary():
@@ -63,7 +63,7 @@ def get_data_summary():
 
 def query_ollama_with_context(user_question, data_summary):
     """Query Ollama with conversation context"""
-    # Build context from data
+
     instance_info = "\n".join([
         f"- {inst_id}: {details['name']}, {details['type']}, {details['avg_cpu']:.2f}% CPU, {details['state']}"
         for inst_id, details in data_summary['instances'].items()
@@ -82,9 +82,9 @@ Instance Details:
 
 Answer the user's question based on this data. Be concise, specific, and actionable. If you don't have enough data, say so."""
 
-    # Build conversation history
+
     conversation = system_context + "\n\n"
-    for msg in conversation_context[-4:]:  # Last 4 exchanges for context
+    for msg in conversation_context[-4:]:
         conversation += f"{msg['role']}: {msg['content']}\n"
     conversation += f"User: {user_question}\nAssistant:"
     
@@ -102,7 +102,7 @@ Answer the user's question based on this data. Be concise, specific, and actiona
 def main():
     """Main chat loop"""
     print("\n" + "="*70)
-    print("🤖 AWS COST OPTIMIZER - AI ASSISTANT")
+    print(" AWS COST OPTIMIZER - AI ASSISTANT")
     print("="*70)
     print("\nAsk me anything about your AWS costs and usage!")
     print("Examples:")
@@ -122,11 +122,11 @@ def main():
                 continue
             
             if user_input.lower() in ['exit', 'quit', 'bye']:
-                print("\n👋 Goodbye! Your cost optimizer is still monitoring in the background.")
+                print("\n Goodbye! Your cost optimizer is still monitoring in the background.")
                 break
             
             if user_input.lower() == 'summary':
-                print(f"\n📊 Current Summary:")
+                print(f"\n Current Summary:")
                 print(f"   Scans: {data_summary['total_scans']}")
                 print(f"   Idle Rate: {data_summary['idle_percentage']:.1f}%")
                 print(f"   Savings: ${data_summary['potential_savings']:.2f}")
@@ -144,10 +144,10 @@ def main():
             conversation_context.append({'role': 'Assistant', 'content': response})
             
         except KeyboardInterrupt:
-            print("\n\n👋 Chat interrupted. Goodbye!")
+            print("\n\n Chat interrupted. Goodbye!")
             break
         except Exception as e:
-            print(f"\n❌ Error: {str(e)}\n")
+            print(f"\n Error: {str(e)}\n")
 
 if __name__ == '__main__':
     main()

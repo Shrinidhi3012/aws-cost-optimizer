@@ -14,7 +14,7 @@ costs_table = dynamodb.Table('CostAnalysisHistory')
 
 def get_data_summary():
     """Gather data for AI analysis"""
-    # Get last 7 days of scans
+    
     end_date = datetime.utcnow().date()
     start_date = end_date - timedelta(days=7)
     
@@ -36,7 +36,7 @@ def get_data_summary():
     cost_response = costs_table.scan()
     cost_data = cost_response.get('Items', [])
     
-    # Build summary
+    
     idle_scans = [s for s in all_scans if s.get('is_idle', False)]
     unique_instances = set(s['instance_id'] for s in all_scans)
     
@@ -93,7 +93,7 @@ def query_ollama(prompt):
 
 def generate_ai_insights():
     """Generate AI insights using Ollama"""
-    print("📊 Gathering AWS cost and usage data...")
+    print("Gathering AWS cost and usage data...")
     summary = get_data_summary()
     
     print(f"\n{'='*70}")
@@ -114,7 +114,6 @@ def generate_ai_insights():
     
     print(f"{'='*70}\n")
     
-    # Create prompt for Ollama
     instance_info = "\n".join([
         f"- {inst_id}: {details['name']}, {details['type']}, {details['avg_cpu']:.2f}% avg CPU, {details['idle_percentage']:.0f}% idle rate"
         for inst_id, details in summary['instance_details'].items()
@@ -134,7 +133,7 @@ Instance Details:
 
 Provide practical AWS cost optimization recommendations. Be specific and actionable. Format as numbered list. Keep response under 300 words."""
     
-    print("🤖 Querying Ollama AI for insights...")
+    print("Querying Ollama AI for insights...")
     print("(This may take 15-30 seconds...)\n")
     
     ai_response = query_ollama(prompt)
