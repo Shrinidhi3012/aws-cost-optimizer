@@ -44,7 +44,7 @@ output "eventbridge_schedules" {
 
 output "deployment_summary" {
   description = "Deployment summary"
-  value       = <<-EOT
+  value = <<-EOT
   
   ═══════════════════════════════════════════════════════════
   AWS Cost Optimizer - Infrastructure Deployed Successfully!
