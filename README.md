@@ -7,6 +7,7 @@
 [![Docker](https://img.shields.io/badge/Docker-Enabled-blue)](https://www.docker.com/)
 [![Terraform](https://img.shields.io/badge/Terraform-IaC-purple)](https://www.terraform.io/)
 
+![Dashboard Overview](docs/images/dashboard-main.png)
 
 ---
 
@@ -23,6 +24,12 @@ Organizations waste **30-40% of their AWS spend** on idle or underutilized resou
 
 ---
 
+## 🏗️ Architecture
+
+![System Architecture](docs/images/architecture-diagram.png)
+
+---
+
 ## ✨ Key Features
 
 ### 🔍 Multi-Resource Scanning
@@ -33,17 +40,23 @@ Organizations waste **30-40% of their AWS spend** on idle or underutilized resou
 - **Lambda Functions:** Identifies over-provisioned or unused functions
 - **Compliance:** Flags untagged resources for governance
 
+![Advanced Resource Findings](docs/images/advanced-findings.png)
+
 ### 📊 Cost Analytics
 - Real-time AWS spending breakdown by service
 - Historical cost trends and projections
 - Potential monthly savings calculations
 - Detailed cost attribution per resource
 
+![Instance Details](docs/images/instance-details.png)
+
 ### 🤖 AI-Powered Insights
 - Natural language queries: "What are my idle resources?"
 - Intelligent recommendations using Ollama (Mistral-7B)
 - Context-aware optimization suggestions
 - Interactive chat interface
+
+![AI Cost Assistant](docs/images/ai-chat.png)
 
 ### 🚀 Automation
 - EventBridge scheduled scans (every 6 hours)
@@ -57,6 +70,8 @@ Organizations waste **30-40% of their AWS spend** on idle or underutilized resou
 - Cost trend charts
 - AI chat interface
 - Export capabilities
+
+![Detailed Findings Table](docs/images/detailed-findings.png)
 
 ---
 
@@ -94,4 +109,5 @@ Organizations waste **30-40% of their AWS spend** on idle or underutilized resou
 
 ---
 **Built with ❤️ for AWS cost optimization**
+
 **⭐ If you find this project useful, please star the repository!**
