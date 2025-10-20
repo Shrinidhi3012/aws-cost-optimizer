@@ -49,7 +49,6 @@ cost-response.json
 lambda-deployment.zip
 cost-analyzer-deployment.zip
 *.json
-!test-resources.json
 !package.json
 
 # Response files
